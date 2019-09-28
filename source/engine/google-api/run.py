@@ -246,7 +246,8 @@ for orderuuid in uuids:
         if delta.seconds < 10800:
             response = requests.post(url, json={
                 'phone': couriers[coutierIndex]['Phone'],
-                'message': 'Сформирован заказ ' + orderuuid[0] + ' Доставка ' + str(deliveryTime[uuids.index(orderuuid)][0]) + ' на ' 
+                'message': 'Сформирован заказ ' + orderuuid[0] + ' Доставка ' + str(deliveryTime[uuids.index(orderuuid)][0]) + 
+                ' на станцию' 
                 + cities[uuids.index(orderuuid)]
             })
             time.sleep(5)
