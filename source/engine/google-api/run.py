@@ -1,11 +1,12 @@
 import httplib2
 import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
+import uuid
 
 # Файл, полученный в Google Developer Console
 CREDENTIALS_FILE = 'creds.json'
 # ID Google Sheets документа
-spreadsheet_id = '1CwavDhdobVa6PY82XPRONOMZjvtKld8JiYWHu4I7OQQ'
+spreadsheet_id = '1ilnE1sihoVoFDY_ako53FmlTjk9VM0wt31Vuj6dN1oc'
 
 # Авторизуемся и получаем service — экземпляр доступа к API
 credentials = ServiceAccountCredentials.from_json_keyfile_name(
@@ -18,41 +19,148 @@ service = apiclient.discovery.build('sheets', 'v4', http = httpAuth)
 # Чтение данных для формирования заказа
 values = service.spreadsheets().values().get(
     spreadsheetId=spreadsheet_id,
-    range='Лист2!B2:C',
+    range='Корзина!A2:G',
     majorDimension='ROWS'
 ).execute()
 
-menuCount = len(values['values'])
-ordermenu = dict()
+# генерация уникального идентификатора заказа
+orderCount = len(values['values'])
 for elem in values['values']:
     if elem:
-        if elem[1] == '1':
-            ordermenu[elem[0]]=elem[1]
+        if len(elem[0]) == 0:
+            elem[0] = uuid.uuid4().hex
 
-# Чистка от старого заказа
-val = [("","") for number in range(menuCount)]
+# подсчет стоимости
+for elem in values['values']:
+    if elem:
+        if len(elem) < 6:
+            elem.append('')
+        if len(elem) < 7:
+            elem.append('')
+        elem[5] = str(int(elem[3]) * int(elem[4]))
+
+# обновление данных в корзине
+uuid = [[values['values'][number][0]] for number in range(len(values['values']))]
+total = [[values['values'][number][5]] for number in range(len(values['values']))]
+#print (uuid)
+#print (total)
+basket = values
+
 values = service.spreadsheets().values().batchUpdate(
     spreadsheetId=spreadsheet_id,
     body={
         "valueInputOption": "USER_ENTERED",
         "data": [
-            {"range": "Лист1!B2:C" + str(2+menuCount),
+            {"range": "Корзина!A2:A" + str(2+len(uuid)),
             "majorDimension": "ROWS",
-            "values": val }
+            "values": uuid },
+            {"range": "Корзина!F2:F" + str(1+len(total)),
+            "majorDimension": "ROWS",
+            "values": total }
     ]
     }
 ).execute()
 
+# Чтение таблицы заказов
+values = service.spreadsheets().values().get(
+    spreadsheetId=spreadsheet_id,
+    range='Заказы!A2:A',
+    majorDimension='ROWS'
+).execute()
+
+# Чтение таблицы меню
+menus = service.spreadsheets().values().get(
+    spreadsheetId=spreadsheet_id,
+    range='Меню!A2:G',
+    majorDimension='ROWS'
+).execute()
+
+# Чтение таблицы остановок по городам, где стоянка более 10 минут
+stopStations = service.spreadsheets().values().get(
+    spreadsheetId=spreadsheet_id,
+    range='Города!A2:D',
+    majorDimension='ROWS'
+).execute()
+
+orderCount = len(values['values'])
+
+# индекс для вставки
+orderCount = orderCount + 2
+
+uuids = [[basket['values'][number][0]] for number in range(len(basket['values']))]
+tickets = [['76741487825338'] for number in range(len(basket['values']))]
+cities = [[basket['values'][number][1]] for number in range(len(basket['values']))]
+comments = [[basket['values'][number][6]] for number in range(len(basket['values']))]
+totals = [[basket['values'][number][5]] for number in range(len(basket['values']))]
+status = [['Не отправлен'] for number in range(len(basket['values']))]
+
+desks = list()
+picture = list()
+bonus = list()
+for number in range(len(basket['values'])):
+    index = basket['values'][number][2]
+    for elem in menus['values']:
+        if elem:
+            if elem[0] == index:
+               desks.append ([elem[2]])
+               picture.append ([elem[6]])
+               bonus.append ([elem[5]])
+
+deliveryTime = list()
+for number in range(len(cities)):            
+    name = cities[number][0]
+    tickNum = tickets[number][0]
+    for stat in range(len(stopStations)):
+        if stopStations['values'][stat][0] == tickNum:
+            if stopStations['values'][stat][1] == name:
+                deliveryTime.append ([stopStations['values'][stat][2]])
+                break
+
+reldeltime = list ()
+useIndex = orderCount 
+for number in range(len(basket['values'])):
+    reldeltime.append(['=G' + str(useIndex) + '-ТДАТА()'])
+    useIndex = useIndex + 1
+
 # Запись данных для оформления заказа
-if len(ordermenu) != 0:
-    values = service.spreadsheets().values().batchUpdate(
-        spreadsheetId=spreadsheet_id,
-        body={
-            "valueInputOption": "USER_ENTERED",
-            "data": [
-                {"range": "Лист1!B2:C" + str(2+len(ordermenu)),
-                "majorDimension": "ROWS",
-                "values": list(ordermenu.items()) }
-        ]
-        }
-    ).execute()
+values = service.spreadsheets().values().batchUpdate(
+    spreadsheetId=spreadsheet_id,
+    body={
+        "valueInputOption": "USER_ENTERED",
+        "data": [
+            {"range": "Заказы!A" + str(orderCount) + ":A" + str(orderCount+len(uuids)),
+            "majorDimension": "ROWS",
+            "values": uuids },
+            {"range": "Заказы!B" + str(orderCount) + ":B" + str(orderCount+len(tickets)),
+            "majorDimension": "ROWS",
+            "values": tickets },
+            {"range": "Заказы!C" + str(orderCount) + ":C" + str(orderCount+len(cities)),
+            "majorDimension": "ROWS",
+            "values": cities },
+            {"range": "Заказы!N" + str(orderCount) + ":N" + str(orderCount+len(comments)),
+            "majorDimension": "ROWS",
+            "values": comments },
+            {"range": "Заказы!E" + str(orderCount) + ":E" + str(orderCount+len(totals)),
+            "majorDimension": "ROWS",
+            "values": totals },
+            {"range": "Заказы!F" + str(orderCount) + ":F" + str(orderCount+len(status)),
+            "majorDimension": "ROWS",
+            "values": status },
+            {"range": "Заказы!G" + str(orderCount) + ":G" + str(orderCount+len(deliveryTime)),
+            "majorDimension": "ROWS",
+            "values": deliveryTime },
+            {"range": "Заказы!H" + str(orderCount) + ":H" + str(orderCount+len(reldeltime)),
+            "majorDimension": "ROWS",
+            "values": reldeltime },
+            {"range": "Заказы!D" + str(orderCount) + ":D" + str(orderCount+len(desks)),
+            "majorDimension": "ROWS",
+            "values": desks },
+            {"range": "Заказы!M" + str(orderCount) + ":M" + str(orderCount+len(picture)),
+            "majorDimension": "ROWS",
+            "values": picture },
+            {"range": "Заказы!L" + str(orderCount) + ":L" + str(orderCount+len(bonus)),
+            "majorDimension": "ROWS",
+            "values": bonus }
+    ]
+    }
+).execute()
