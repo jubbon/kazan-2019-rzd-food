@@ -113,9 +113,12 @@ def getMinimumTime (A, B):
     data = response.json()
     #print(data['response']['route'][0]['summary']['distance'])
     #print(data['response']['route'][0]['summary']['trafficTime'])
-    print ( "Car route distance {}".format( data['response']['route'][0]['summary']['distance'] ) )
-    print ( "Car route time {} second".format( data['response']['route'][0]['summary']['trafficTime'] ) )
-    maybeDriveWay[data['response']['route'][0]['summary']['trafficTime']] = 'Car'
+    try:
+        print ( "Car route distance {}".format( data['response']['route'][0]['summary']['distance'] ) )
+        print ( "Car route time {} second".format( data['response']['route'][0]['summary']['trafficTime'] ) )
+        maybeDriveWay[data['response']['route'][0]['summary']['trafficTime']] = 'Car'
+    except:
+        print("request error")
 
     # https://developer.here.com/api-explorer/rest/routing/route-from-a-to-b-pedestrian
     # Pedestrian route from A to B
@@ -134,9 +137,14 @@ def getMinimumTime (A, B):
     data = response.json()
     #print(data['response']['route'][0]['summary']['distance'])
     #print(data['response']['route'][0]['summary']['travelTime'])
-    print ( "Pedestrian route distance {}".format( data['response']['route'][0]['summary']['distance'] ) )
-    print ( "Pedestrian route time {} second".format( data['response']['route'][0]['summary']['travelTime'] ) )
-    maybeDriveWay[data['response']['route'][0]['summary']['travelTime']] = 'Pedestrian'
-    keys = sorted(maybeDriveWay.keys())
-    print ( "Use '{}' mode for motion".format( maybeDriveWay[keys[0]] ) )
-    return keys[0]
+    try:
+        print ( "Pedestrian route distance {}".format( data['response']['route'][0]['summary']['distance'] ) )
+        print ( "Pedestrian route time {} second".format( data['response']['route'][0]['summary']['travelTime'] ) )
+        maybeDriveWay[data['response']['route'][0]['summary']['travelTime']] = 'Pedestrian'
+        keys = sorted(maybeDriveWay.keys())
+        print ( "Use '{}' mode for motion".format( maybeDriveWay[keys[0]] ) )
+        return keys[0]
+    except:
+        print("request error")
+        return -1
+    return -1
