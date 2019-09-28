@@ -1,0 +1,38 @@
+---
+
+  - name: Настройка рабочего окружения Visual Studio Code
+    hosts: localhost
+    gather_facts: no
+    roles:
+      - role: mondrik.vscode-workspace
+        workspace_name: MyCity
+        workspace_directory: "{{ current_directory }}"
+        git:
+          ignoreLimitWarning: !!str true
+        python:
+          version: 3.7.4
+          origin: /opt/anaconda/anaconda-python-3.7
+          linting:
+            flake8:
+              - "--max-line-length=120"
+          formatting:
+            yapf:
+              style: chromium
+              indent_width: 4
+
+      - role: mondrik.vscode-workspace-terminal
+        uid: food-server
+        title: Серверное приложение
+        description: Терминал для разработки серверного приложения
+        cwd: "{{ current_directory }}/source/server"
+        anaconda:
+          origin: /opt/anaconda/anaconda-python-3.7
+          python:
+            version: 3.7.4
+            packages:
+              conda:
+                channels:
+                  - conda-forge
+                dependencies:
+                  - awscli
+

@@ -1,0 +1,12 @@
+---
+
+  - name: Обновление репозиториев tensorflow
+    hosts: localhost
+    gather_facts: no
+    roles:
+      - role: mondrik.repositories
+        origin: github
+        projects:
+          - odoo/docker
+          - vertelab/odoo-delivery
+        dir: "{{ current_directory }}/repos"
