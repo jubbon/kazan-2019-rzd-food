@@ -4,6 +4,8 @@ from oauth2client.service_account import ServiceAccountCredentials
 import uuid
 import random
 import requests
+import time
+from datetime import datetime
 
 # Файл, полученный в Google Developer Console
 CREDENTIALS_FILE = 'creds.json'
@@ -46,27 +48,34 @@ values = service.spreadsheets().values().get(
 ).execute()
 
 # генерация уникального идентификатора заказа
-orderCount = len(values['values'])
-for elem in values['values']:
-    if elem:
-        if len(elem[0]) == 0:
-            elem[0] = uuid.uuid4().hex
+orderCount = 0
+uuid = list()
+total = list()
+basket = dict()
 
-# подсчет стоимости
-for elem in values['values']:
-    if elem:
-        if len(elem) < 6:
-            elem.append('')
-        if len(elem) < 7:
-            elem.append('')
-        elem[5] = str(int(elem[3]) * int(elem[4]))
+if 'values' in values:
+    orderCount = len(values['values'])
+    
+    for elem in values['values']:
+        if elem:
+            if len(elem[0]) == 0:
+                elem[0] = str(uuid.uuid4().hex)[:8]
 
-# обновление данных в корзине
-uuid = [[values['values'][number][0]] for number in range(len(values['values']))]
-total = [[values['values'][number][5]] for number in range(len(values['values']))]
-#print (uuid)
-#print (total)
-basket = values
+    # подсчет стоимости
+    for elem in values['values']:
+        if elem:
+            if len(elem) < 6:
+                elem.append('')
+            if len(elem) < 7:
+                elem.append('')
+            elem[5] = str(int(elem[3]) * int(elem[4]))
+
+    # обновление данных в корзине
+    uuid = [[values['values'][number][0]] for number in range(len(values['values']))]
+    total = [[values['values'][number][5]] for number in range(len(values['values']))]
+    #print (uuid)
+    #print (total)
+    basket = values
 
 values = service.spreadsheets().values().batchUpdate(
     spreadsheetId=spreadsheet_id,
@@ -109,40 +118,48 @@ orderCount = len(values['values'])
 # индекс для вставки
 orderCount = orderCount + 2
 
-uuids = [[basket['values'][number][0]] for number in range(len(basket['values']))]
-tickets = [['76741487825338'] for number in range(len(basket['values']))]
-cities = [[basket['values'][number][1]] for number in range(len(basket['values']))]
-comments = [[basket['values'][number][6]] for number in range(len(basket['values']))]
-totals = [[basket['values'][number][5]] for number in range(len(basket['values']))]
-status = [['Не отправлен'] for number in range(len(basket['values']))]
-
+uuids = list()
+tickets = list()
+cities = list ()
+comments = list()
+totals = list()
+status=list()
 desks = list()
 picture = list()
 bonus = list()
-for number in range(len(basket['values'])):
-    index = basket['values'][number][2]
-    for elem in menus['values']:
-        if elem:
-            if elem[0] == index:
-               desks.append ([elem[2]])
-               picture.append ([elem[6]])
-               bonus.append ([elem[5]])
-
 deliveryTime = list()
-for number in range(len(cities)):            
-    name = cities[number][0]
-    tickNum = tickets[number][0]
-    for stat in range(len(stopStations)):
-        if stopStations['values'][stat][0] == tickNum:
-            if stopStations['values'][stat][1] == name:
-                deliveryTime.append ([stopStations['values'][stat][2]])
-                break
-
 reldeltime = list ()
-useIndex = orderCount 
-for number in range(len(basket['values'])):
-    reldeltime.append(['=G' + str(useIndex) + '-ТДАТА()'])
-    useIndex = useIndex + 1
+
+if 'values' in basket:
+    uuids = [[basket['values'][number][0]] for number in range(len(basket['values']))]
+    tickets = [['76741487825338'] for number in range(len(basket['values']))]
+    cities = [[basket['values'][number][1]] for number in range(len(basket['values']))]
+    comments = [[basket['values'][number][6]] for number in range(len(basket['values']))]
+    totals = [[basket['values'][number][5]] for number in range(len(basket['values']))]
+    status = [['Не отправлен'] for number in range(len(basket['values']))]
+
+    for number in range(len(basket['values'])):
+        index = basket['values'][number][2]
+        for elem in menus['values']:
+            if elem:
+                if elem[0] == index:
+                    desks.append ([elem[2]])
+                    picture.append ([elem[6]])
+                    bonus.append ([elem[5]])
+
+    for number in range(len(cities)):            
+        name = cities[number][0]
+        tickNum = tickets[number][0]
+        for stat in range(len(stopStations)):
+            if stopStations['values'][stat][0] == tickNum:
+                if stopStations['values'][stat][1] == name:
+                    deliveryTime.append ([stopStations['values'][stat][2]])
+                    break
+
+    useIndex = orderCount 
+    for number in range(len(basket['values'])):
+        reldeltime.append(['=G' + str(useIndex) + '-ТДАТА()'])
+        useIndex = useIndex + 1
 
 # Запись данных для оформления заказа
 values = service.spreadsheets().values().batchUpdate(
@@ -194,16 +211,24 @@ values = service.spreadsheets().values().get(
 ).execute()
 deliveryHistoryCount = len(values['values'])
 
-
+url = f"https://k7qml3o0db.execute-api.us-east-1.amazonaws.com/dev/send_sms"
 delivToHist = list()
 for orderuuid in uuids:
     count = len ( couriers)
     coutierIndex = random.randint(0, count-1) 
-    url = f"https://k7qml3o0db.execute-api.us-east-1.amazonaws.com/dev/send_sms"
-    response = requests.post(url, json={
-            'phone': couriers[coutierIndex]['Phone'],
-            'message': 'Сформирован заказ: ' +  orderuuid[0] 
-        })
+
+    now = datetime.now()
+    delstr = deliveryTime[uuids.index(orderuuid)][0]
+    deltime= datetime.strptime(delstr, '%d.%m.%Y %H:%M')
+    if deltime > now:
+        delta = deltime - now
+        if delta.seconds < 10800:
+            response = requests.post(url, json={
+                'phone': couriers[coutierIndex]['Phone'],
+                'message': 'Сформирован заказ ' + orderuuid[0] + ' Доставка ' + str(deliveryTime[uuids.index(orderuuid)][0]) + ' на ' 
+                + cities[uuids.index(orderuuid)]
+            })
+            time.sleep(5)
     cour = list()
     cour.append( orderuuid[0] )    
     cour.append( couriers[coutierIndex]['Role'] )
@@ -227,18 +252,17 @@ values = service.spreadsheets().values().batchUpdate(
             "values": delivToHist }    ]
         }
 ).execute()
-'''
+
 # Чистка от старого заказа
-val = [[''] for number in range(7)]
+val = [['','','','','','',''] for number in range(7)]
 values = service.spreadsheets().values().batchUpdate(
     spreadsheetId=spreadsheet_id,
     body={
         "valueInputOption": "USER_ENTERED",
         "data": [
-            {"range": "Корзина!A4:G" + str(orderCount+len(val)),
-            "majorDimension": "ROWS",
+            {"range": "Корзина!A2:G" + str(orderCount+len(val)),
+            "majorDimension": "COLUMNS",
             "values": val }
     ]
     }
 ).execute()
-'''
