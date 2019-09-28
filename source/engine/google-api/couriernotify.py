@@ -80,4 +80,4 @@ while True:
                             "values": [[str(now)]] }    ]
                         }
                         ).execute()
-                    time.sleep(6)
+    time.sleep(6)
