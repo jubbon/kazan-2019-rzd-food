@@ -1,2 +1,4 @@
 repos/
 .vscode/
+/source/engine/hereapi/__pycache__/__init__.cpython-37.pyc
+/source/engine/hereapi/__pycache__/run.cpython-37.pyc
