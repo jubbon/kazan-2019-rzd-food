@@ -214,6 +214,7 @@ for orderuuid in uuids:
     cour.append( couriers[coutierIndex]['Photo'] )
     cour.append( couriers[coutierIndex]['Status'] )
     cour.append( couriers[coutierIndex]['Percent'] )
+    cour.append( deliveryTime[uuids.index(orderuuid)][0] )
     delivToHist.append(cour)
 
 values = service.spreadsheets().values().batchUpdate(
@@ -221,7 +222,7 @@ values = service.spreadsheets().values().batchUpdate(
     body={
         "valueInputOption": "USER_ENTERED",
         "data": [
-            {"range": "Доставка!A" + str(deliveryHistoryCount+2) + ":I" + str(deliveryHistoryCount +2 +len(delivToHist)),
+            {"range": "Доставка!A" + str(deliveryHistoryCount+2) + ":J" + str(deliveryHistoryCount +2 +len(delivToHist)),
             "majorDimension": "ROWS",
             "values": delivToHist }    ]
         }
