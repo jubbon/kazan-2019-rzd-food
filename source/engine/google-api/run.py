@@ -2,6 +2,8 @@ import httplib2
 import apiclient.discovery
 from oauth2client.service_account import ServiceAccountCredentials
 import uuid
+import random
+import requests
 
 # Файл, полученный в Google Developer Console
 CREDENTIALS_FILE = 'creds.json'
@@ -15,6 +17,26 @@ credentials = ServiceAccountCredentials.from_json_keyfile_name(
      'https://www.googleapis.com/auth/drive'])
 httpAuth = credentials.authorize(httplib2.Http())
 service = apiclient.discovery.build('sheets', 'v4', http = httpAuth)
+
+# Курьеры
+couriers = [{'Role': 'Курьер',
+                'FirstName': 'Дмитрий',
+                'LastName':'Куликов',
+                'FIO':'Дмитрий Куликов',
+                'Phone':'+79063660240',
+                'Photo': 'https://rzd-food.s3.amazonaws.com/kulikov.jpg',
+                'Status': 'В ожидании',
+                'Percent': 0
+                },
+             {'Role': 'Курьер',
+                'FirstName': 'Айдар',
+                'LastName':'Сайфуллин',
+                'FIO':'Айдар Сайфуллин',
+                'Phone':'+79053757057',
+                'Photo': 'https://rzd-food.s3.amazonaws.com/aidar.jpg',
+                'Status': 'В ожидании',
+                'Percent': 0
+                }]
 
 # Чтение данных для формирования заказа
 values = service.spreadsheets().values().get(
@@ -164,3 +186,58 @@ values = service.spreadsheets().values().batchUpdate(
     ]
     }
 ).execute()
+
+values = service.spreadsheets().values().get(
+    spreadsheetId=spreadsheet_id,
+    range='Доставка!A2:A',
+    majorDimension='ROWS'
+).execute()
+deliveryHistoryCount = len(values['values'])
+
+
+delivToHist = list()
+for orderuuid in uuids:
+    count = len ( couriers)
+    coutierIndex = random.randint(0, count-1) 
+    url = f"https://k7qml3o0db.execute-api.us-east-1.amazonaws.com/dev/send_sms"
+    response = requests.post(url, json={
+            'phone': couriers[coutierIndex]['Phone'],
+            'message': 'Сформирован заказ: ' +  orderuuid[0] 
+        })
+    cour = list()
+    cour.append( orderuuid[0] )    
+    cour.append( couriers[coutierIndex]['Role'] )
+    cour.append( couriers[coutierIndex]['FirstName'] )
+    cour.append( couriers[coutierIndex]['LastName'] )
+    cour.append( couriers[coutierIndex]['FIO'] )
+    cour.append( couriers[coutierIndex]['Phone'] )
+    cour.append( couriers[coutierIndex]['Photo'] )
+    cour.append( couriers[coutierIndex]['Status'] )
+    cour.append( couriers[coutierIndex]['Percent'] )
+    delivToHist.append(cour)
+
+values = service.spreadsheets().values().batchUpdate(
+    spreadsheetId=spreadsheet_id,
+    body={
+        "valueInputOption": "USER_ENTERED",
+        "data": [
+            {"range": "Доставка!A" + str(deliveryHistoryCount+2) + ":I" + str(deliveryHistoryCount +2 +len(delivToHist)),
+            "majorDimension": "ROWS",
+            "values": delivToHist }    ]
+        }
+).execute()
+'''
+# Чистка от старого заказа
+val = [[''] for number in range(7)]
+values = service.spreadsheets().values().batchUpdate(
+    spreadsheetId=spreadsheet_id,
+    body={
+        "valueInputOption": "USER_ENTERED",
+        "data": [
+            {"range": "Корзина!A4:G" + str(orderCount+len(val)),
+            "majorDimension": "ROWS",
+            "values": val }
+    ]
+    }
+).execute()
+'''
