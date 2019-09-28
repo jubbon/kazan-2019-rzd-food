@@ -6,6 +6,12 @@ import random
 import requests
 import time
 from datetime import datetime
+import sys
+import os
+
+sys.path.append(os.path.join(sys.path[0], '../'))
+
+from hereapi import run as hereapi
 
 # Файл, полученный в Google Developer Console
 CREDENTIALS_FILE = 'creds.json'
@@ -102,14 +108,14 @@ values = service.spreadsheets().values().get(
 # Чтение таблицы меню
 menus = service.spreadsheets().values().get(
     spreadsheetId=spreadsheet_id,
-    range='Меню!A2:G',
+    range='Меню!A2:H',
     majorDimension='ROWS'
 ).execute()
 
 # Чтение таблицы остановок по городам, где стоянка более 10 минут
 stopStations = service.spreadsheets().values().get(
     spreadsheetId=spreadsheet_id,
-    range='Города!A2:D',
+    range='Города!A2:E',
     majorDimension='ROWS'
 ).execute()
 
@@ -129,6 +135,9 @@ picture = list()
 bonus = list()
 deliveryTime = list()
 reldeltime = list ()
+cafes = list()
+cafes_coord = list()
+station_cood = list()
 
 if 'values' in basket:
     uuids = [[basket['values'][number][0]] for number in range(len(basket['values']))]
@@ -146,6 +155,8 @@ if 'values' in basket:
                     desks.append ([elem[2]])
                     picture.append ([elem[6]])
                     bonus.append ([elem[5]])
+                    cafes.append ([elem[3]])
+                    cafes_coord.append ([elem[7]])
 
     for number in range(len(cities)):            
         name = cities[number][0]
@@ -154,6 +165,7 @@ if 'values' in basket:
             if stopStations['values'][stat][0] == tickNum:
                 if stopStations['values'][stat][1] == name:
                     deliveryTime.append ([stopStations['values'][stat][2]])
+                    station_cood.append ([stopStations['values'][stat][4]])
                     break
 
     useIndex = orderCount 
@@ -179,6 +191,15 @@ values = service.spreadsheets().values().batchUpdate(
             {"range": "Заказы!N" + str(orderCount) + ":N" + str(orderCount+len(comments)),
             "majorDimension": "ROWS",
             "values": comments },
+            {"range": "Заказы!O" + str(orderCount) + ":O" + str(orderCount+len(cafes)),
+            "majorDimension": "ROWS",
+            "values": cafes },
+            {"range": "Заказы!P" + str(orderCount) + ":P" + str(orderCount+len(cafes_coord)),
+            "majorDimension": "ROWS",
+            "values": cafes_coord },
+            {"range": "Заказы!Q" + str(orderCount) + ":Q" + str(orderCount+len(station_cood)),
+            "majorDimension": "ROWS",
+            "values": station_cood },
             {"range": "Заказы!E" + str(orderCount) + ":E" + str(orderCount+len(totals)),
             "majorDimension": "ROWS",
             "values": totals },
@@ -240,6 +261,11 @@ for orderuuid in uuids:
     cour.append( couriers[coutierIndex]['Status'] )
     cour.append( couriers[coutierIndex]['Percent'] )
     cour.append( deliveryTime[uuids.index(orderuuid)][0] )
+    A = cafes_coord[uuids.index(orderuuid)][0]
+    B = station_cood [uuids.index(orderuuid)][0]
+    A = A.replace(" ", "")
+    B = B.replace(" ", "")
+    cour.append( hereapi.getMinimumTime(A, B ))
     delivToHist.append(cour)
 
 values = service.spreadsheets().values().batchUpdate(
@@ -247,7 +273,7 @@ values = service.spreadsheets().values().batchUpdate(
     body={
         "valueInputOption": "USER_ENTERED",
         "data": [
-            {"range": "Доставка!A" + str(deliveryHistoryCount+2) + ":J" + str(deliveryHistoryCount +2 +len(delivToHist)),
+            {"range": "Доставка!A" + str(deliveryHistoryCount+2) + ":K" + str(deliveryHistoryCount +2 +len(delivToHist)),
             "majorDimension": "ROWS",
             "values": delivToHist }    ]
         }
