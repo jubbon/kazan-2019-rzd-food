@@ -56,7 +56,7 @@ while True:
 
     # генерация уникального идентификатора заказа
     orderCount = 0
-    uuid = list()
+    uuids = list()
     total = list()
     basket = dict()
 
@@ -75,12 +75,15 @@ while True:
                     elem.append('')
                 if len(elem) < 7:
                     elem.append('')
-                elem[5] = str(int(elem[3]) * int(elem[4]))
+                try:
+                    elem[5] = str(int(elem[3]) * int(elem[4]))
+                except:
+                    print ('type error')
 
         # обновление данных в корзине
-        uuid = [[values['values'][number][0]] for number in range(len(values['values']))]
+        uuids = [[values['values'][number][0]] for number in range(len(values['values']))]
         total = [[values['values'][number][5]] for number in range(len(values['values']))]
-        #print (uuid)
+        #print (uuids)
         #print (total)
         basket = values
 
@@ -89,9 +92,9 @@ while True:
         body={
             "valueInputOption": "USER_ENTERED",
             "data": [
-                {"range": "Корзина!A2:A" + str(2+len(uuid)),
+                {"range": "Корзина!A2:A" + str(2+len(uuids)),
                 "majorDimension": "ROWS",
-                "values": uuid },
+                "values": uuids },
                 {"range": "Корзина!F2:F" + str(1+len(total)),
                 "majorDimension": "ROWS",
                 "values": total }
@@ -120,7 +123,9 @@ while True:
         majorDimension='ROWS'
     ).execute()
 
-    orderCount = len(values['values'])
+    orderCount = 0
+    if 'values' in values:
+        orderCount = len(values['values'])
 
     # индекс для вставки
     orderCount = orderCount + 2
@@ -226,6 +231,44 @@ while True:
         }
     ).execute()
 
+    # Перрон
+    if len (uuids) > 0:
+        values = service.spreadsheets().values().get(
+            spreadsheetId=spreadsheet_id,
+            range='Перрон!A2:D',
+            majorDimension='ROWS'
+        ).execute()
+        
+        orderonWayCount = 0
+        if 'values' in values:
+            orderonWayCount = len(values['values'])
+        orderonWayCount = orderonWayCount+2
+
+        location = [['Платформа ' + str(random.randint(1, 5))  +', путь ' + str(random.randint(1, 10)) + ', вагон ' + str(random.randint(1, 20))] for number in range(len (uuids))]
+        firstColor = [['https://rzd-food.s3.amazonaws.com/color-' + str(random.randint(1, 8))  +'.jpg'] for number in range(len (uuids))]
+        secondColor = [['https://rzd-food.s3.amazonaws.com/color-' + str(random.randint(1, 8))  +'.jpg'] for number in range(len (uuids))]
+        
+        values = service.spreadsheets().values().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body={
+                "valueInputOption": "USER_ENTERED",
+                "data": [
+                    {"range": "Перрон!A" + str(orderonWayCount) + ":A" + str(orderonWayCount+len(uuids)),
+                    "majorDimension": "ROWS",
+                    "values": uuids },
+                    {"range": "Перрон!B" + str(orderonWayCount) + ":B" + str(orderonWayCount+len(location)),
+                    "majorDimension": "ROWS",
+                    "values": location },
+                    {"range": "Перрон!C" + str(orderonWayCount) + ":C" + str(orderonWayCount+len(firstColor)),
+                    "majorDimension": "ROWS",
+                    "values": firstColor },
+                    {"range": "Перрон!D" + str(orderonWayCount) + ":D" + str(orderonWayCount+len(secondColor)),
+                    "majorDimension": "ROWS",
+                    "values": secondColor }
+            ]
+            }
+        ).execute()
+    
     values = service.spreadsheets().values().get(
         spreadsheetId=spreadsheet_id,
         range='Доставка!A2:A',

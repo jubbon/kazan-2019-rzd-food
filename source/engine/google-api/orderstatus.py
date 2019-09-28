@@ -17,6 +17,7 @@ httpAuth = credentials.authorize(httplib2.Http())
 service = apiclient.discovery.build('sheets', 'v4', http = httpAuth)
 
 while True:
+    time.sleep(20)
     # Чтение таблицы заказов
     values = service.spreadsheets().values().get(
         spreadsheetId=spreadsheet_id,
@@ -24,22 +25,23 @@ while True:
         majorDimension='ROWS'
     ).execute()
 
-    status = [[values['values'][number][0]] for number in range(len(values['values']))]
+    if 'values' in values:
+        status = [[values['values'][number][0]] for number in range(len(values['values']))]
 
-    for elem in status:
-        if elem[0] == 'Не отправлен':
-            elem[0] = 'Заказ формируется'
+        for elem in status:
+            if elem[0] == 'Не отправлен':
+                elem[0] = 'Заказ формируется'
 
-    values = service.spreadsheets().values().batchUpdate(
-        spreadsheetId=spreadsheet_id,
-        body={
-        "valueInputOption": "USER_ENTERED",
-        "data": [
-            {"range": "Заказы!F2:F" + str(2+len(status)),
-            "majorDimension": "ROWS",
-            "values": status }]
-        }
-        ).execute()
-        
-    time.sleep(12)
+        values = service.spreadsheets().values().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body={
+            "valueInputOption": "USER_ENTERED",
+            "data": [
+                {"range": "Заказы!F2:F" + str(2+len(status)),
+                "majorDimension": "ROWS",
+                "values": status }]
+            }
+            ).execute()
+            
+    
 
