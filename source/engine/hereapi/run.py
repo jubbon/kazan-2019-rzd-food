@@ -69,7 +69,7 @@ def getMinimumTime (A, B):
     if "Connections" in status:
         # first route from list
         route_dut_time = iso8601_duration_as_seconds( status["Connections"]["Connection"][0]["duration"] )
-        print ( "Public Transport route time {} second".format( route_dut_time ) )
+        #print ( "Public Transport route time {} second".format( route_dut_time ) )
         maybeDriveWay [route_dut_time] = 'Public Transport'
     '''
         route = status["Connections"]["Connection"][0]["Sections"]["Sec"]
@@ -114,8 +114,8 @@ def getMinimumTime (A, B):
     #print(data['response']['route'][0]['summary']['distance'])
     #print(data['response']['route'][0]['summary']['trafficTime'])
     try:
-        print ( "Car route distance {}".format( data['response']['route'][0]['summary']['distance'] ) )
-        print ( "Car route time {} second".format( data['response']['route'][0]['summary']['trafficTime'] ) )
+        #print ( "Car route distance {}".format( data['response']['route'][0]['summary']['distance'] ) )
+        #print ( "Car route time {} second".format( data['response']['route'][0]['summary']['trafficTime'] ) )
         maybeDriveWay[data['response']['route'][0]['summary']['trafficTime']] = 'Car'
     except:
         print("request error")
@@ -138,11 +138,12 @@ def getMinimumTime (A, B):
     #print(data['response']['route'][0]['summary']['distance'])
     #print(data['response']['route'][0]['summary']['travelTime'])
     try:
-        print ( "Pedestrian route distance {}".format( data['response']['route'][0]['summary']['distance'] ) )
-        print ( "Pedestrian route time {} second".format( data['response']['route'][0]['summary']['travelTime'] ) )
+        #print ( "Pedestrian route distance {}".format( data['response']['route'][0]['summary']['distance'] ) )
+        #print ( "Pedestrian route time {} second".format( data['response']['route'][0]['summary']['travelTime'] ) )
         maybeDriveWay[data['response']['route'][0]['summary']['travelTime']] = 'Pedestrian'
         keys = sorted(maybeDriveWay.keys())
-        print ( "Use '{}' mode for motion".format( maybeDriveWay[keys[0]] ) )
+        #print ( "Use '{}' mode for motion".format( maybeDriveWay[keys[0]] ) )
+        print("Found minimum route time equal " + str(keys[0]) + " seconds")
         return keys[0]
     except:
         print("request error")
