@@ -47,6 +47,7 @@ couriers = [{'Role': 'Курьер',
                 }]
 
 while True:
+    
     # Чтение данных для формирования заказа
     values = service.spreadsheets().values().get(
         spreadsheetId=spreadsheet_id,
@@ -62,7 +63,7 @@ while True:
 
     if 'values' in values:
         orderCount = len(values['values'])
-        
+        print ('Processing basket of orders')
         for elem in values['values']:
             if elem:
                 if len(elem[0]) == 0:
@@ -245,8 +246,10 @@ while True:
         orderonWayCount = orderonWayCount+2
 
         location = [['Платформа ' + str(random.randint(1, 5))  +', путь ' + str(random.randint(1, 10)) + ', вагон ' + str(random.randint(1, 20))] for number in range(len (uuids))]
-        firstColor = [['https://rzd-food.s3.amazonaws.com/color-' + str(random.randint(1, 8))  +'.jpg'] for number in range(len (uuids))]
-        secondColor = [['https://rzd-food.s3.amazonaws.com/color-' + str(random.randint(1, 8))  +'.jpg'] for number in range(len (uuids))]
+        semofor = random.sample(range(1, 8), 2)
+        firstColor = [['https://rzd-food.s3.amazonaws.com/color-' + str(semofor[0])  +'.jpg'] for number in range(len (uuids))]
+        secondColor = [['https://rzd-food.s3.amazonaws.com/color-' + str(semofor[1])  +'.jpg'] for number in range(len (uuids))]
+        perronStatus = [['Я на перроне'] for number in range(len (uuids))]
         
         values = service.spreadsheets().values().batchUpdate(
             spreadsheetId=spreadsheet_id,
@@ -264,7 +267,11 @@ while True:
                     "values": firstColor },
                     {"range": "Перрон!D" + str(orderonWayCount) + ":D" + str(orderonWayCount+len(secondColor)),
                     "majorDimension": "ROWS",
-                    "values": secondColor }
+                    "values": secondColor },
+                    {"range": "Перрон!E" + str(orderonWayCount) + ":E" + str(orderonWayCount+len(perronStatus)),
+                    "majorDimension": "ROWS",
+                    "values": perronStatus }
+
             ]
             }
         ).execute()
@@ -274,7 +281,10 @@ while True:
         range='Доставка!A2:A',
         majorDimension='ROWS'
     ).execute()
-    deliveryHistoryCount = len(values['values'])
+
+    deliveryHistoryCount = 0
+    if 'values' in values:
+        deliveryHistoryCount= len(values['values'])
 
     url = f"https://k7qml3o0db.execute-api.us-east-1.amazonaws.com/dev/send_sms"
     delivToHist = list()
@@ -310,17 +320,39 @@ while True:
         B = station_cood [uuids.index(orderuuid)][0]
         A = A.replace(" ", "")
         B = B.replace(" ", "")
-        cour.append( hereapi.getMinimumTime(A, B ))
+        mintime = hereapi.getMinimumTime(A, B )
+        if mintime == -1:
+            mintime = 0
+        cour.append( mintime )
         delivToHist.append(cour)
 
+    path = [[ cafes[number][0] + ' - ' + cities[number][0]] for number in range(len(cities))]
     values = service.spreadsheets().values().batchUpdate(
         spreadsheetId=spreadsheet_id,
         body={
             "valueInputOption": "USER_ENTERED",
             "data": [
-                {"range": "Доставка!A" + str(deliveryHistoryCount+2) + ":K" + str(deliveryHistoryCount +2 +len(delivToHist)),
-                "majorDimension": "ROWS",
-                "values": delivToHist }    ]
+                {
+                    "range": "Доставка!A" + str(deliveryHistoryCount+2) + ":K" + str(deliveryHistoryCount +2 +len(delivToHist)),
+                    "majorDimension": "ROWS",
+                    "values": delivToHist 
+                },
+                {
+                    "range": "Доставка!O" + str(deliveryHistoryCount+2) + ":O" + str(deliveryHistoryCount+ 2+len(cafes)),
+                    "majorDimension": "ROWS",
+                    "values": cafes
+                },
+                {
+                    "range": "Доставка!P" + str(deliveryHistoryCount+2) + ":P" + str(deliveryHistoryCount+ 2+len(cities)),
+                    "majorDimension": "ROWS",
+                    "values": cities 
+                },
+                {
+                    "range": "Доставка!Q" + str(deliveryHistoryCount+2) + ":Q" + str(deliveryHistoryCount + 2 +len(path)),
+                    "majorDimension": "ROWS",
+                    "values": path
+                }
+                  ]
             }
     ).execute()
 
@@ -337,4 +369,4 @@ while True:
         ]
         }
     ).execute()
-    time.sleep(6)
+    time.sleep(7)
