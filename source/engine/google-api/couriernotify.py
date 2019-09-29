@@ -64,12 +64,16 @@ while True:
                 if deltime > now:
                     delta = deltime - now
                     if delta.seconds < 10800:
-                        response = requests.post(url, json={
-                            'phone': phones[number][0],
-                            'message': 'Сформирован заказ ' + uuid[number][0] + ' Доставка '
-                            + delstr + ' на станцию' 
-                            + stationname[orderuuid.index(uuid[number])][0]
-                        })
+                        try:
+                            response = requests.post(url, json={
+                                'phone': phones[number][0],
+                                'message': 'Сформирован заказ ' + uuid[number][0] + ' Доставка '
+                                + delstr + ' на станцию' 
+                                + stationname[orderuuid.index(uuid[number])][0]
+                            })
+                            print ('Send SMS: ' + phones[number][0])
+                        except:
+                            print ('Error sms sending or find order uuid')
 
                         values = service.spreadsheets().values().batchUpdate(
                         spreadsheetId=spreadsheet_id,
