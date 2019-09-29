@@ -31,6 +31,7 @@ while True:
         for elem in status:
             if elem[0] == 'Не отправлен':
                 elem[0] = 'Заказ формируется'
+                print ('Change order status')
 
         values = service.spreadsheets().values().batchUpdate(
             spreadsheetId=spreadsheet_id,
