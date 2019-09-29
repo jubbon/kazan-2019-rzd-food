@@ -17,7 +17,7 @@ httpAuth = credentials.authorize(httplib2.Http())
 service = apiclient.discovery.build('sheets', 'v4', http = httpAuth)
 
 while True:
-    time.sleep(20)
+    time.sleep(30)
     # Чтение таблицы заказов
     values = service.spreadsheets().values().get(
         spreadsheetId=spreadsheet_id,
