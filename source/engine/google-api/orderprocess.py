@@ -113,14 +113,14 @@ while True:
     # Чтение таблицы меню
     menus = service.spreadsheets().values().get(
         spreadsheetId=spreadsheet_id,
-        range='Меню!A2:H',
+        range='Меню!A2:L',
         majorDimension='ROWS'
     ).execute()
 
     # Чтение таблицы остановок по городам, где стоянка более 10 минут
     stopStations = service.spreadsheets().values().get(
         spreadsheetId=spreadsheet_id,
-        range='Города!A2:E',
+        range='Города!A2:G',
         majorDimension='ROWS'
     ).execute()
 
@@ -144,8 +144,11 @@ while True:
     reldeltime = list ()
     cafes = list()
     cafes_coord = list()
+    cafes_addrs = list()
     station_cood = list()
-
+    station_names = list()
+    station_address = list()
+  
     if 'values' in basket:
         uuids = [[basket['values'][number][0]] for number in range(len(basket['values']))]
         tickets = [['76741487825338'] for number in range(len(basket['values']))]
@@ -164,6 +167,7 @@ while True:
                         bonus.append ([elem[5]])
                         cafes.append ([elem[3]])
                         cafes_coord.append ([elem[7]])
+                        cafes_addrs.append ([elem[9]])
 
         for number in range(len(cities)):            
             name = cities[number][0]
@@ -173,6 +177,8 @@ while True:
                     if stopStations['values'][stat][1] == name:
                         deliveryTime.append ([stopStations['values'][stat][2]])
                         station_cood.append ([stopStations['values'][stat][4]])
+                        station_names.append ([stopStations['values'][stat][5]])
+                        station_address.append ([stopStations['values'][stat][6]])
                         break
 
         useIndex = orderCount 
@@ -326,7 +332,9 @@ while True:
         cour.append( mintime )
         delivToHist.append(cour)
 
-    path = [[ cafes[number][0] + ' - ' + cities[number][0]] for number in range(len(cities))]
+    stationWithAddr = [[ station_names[number][0] + ' (' + station_address[number][0] + ')'] for number in range(len(station_address))]
+    cafesWithAddr = [[ cafes[number][0] + ' (' + cafes_addrs[number][0] + ')'] for number in range(len(cafes_addrs))]    
+    path = [[ cafes[number][0] + ' - ' + station_names[number][0]] for number in range(len(station_names))]
     values = service.spreadsheets().values().batchUpdate(
         spreadsheetId=spreadsheet_id,
         body={
@@ -338,14 +346,14 @@ while True:
                     "values": delivToHist 
                 },
                 {
-                    "range": "Доставка!O" + str(deliveryHistoryCount+2) + ":O" + str(deliveryHistoryCount+ 2+len(cafes)),
+                    "range": "Доставка!O" + str(deliveryHistoryCount+2) + ":O" + str(deliveryHistoryCount+ 2+len(cafesWithAddr)),
                     "majorDimension": "ROWS",
-                    "values": cafes
+                    "values": cafesWithAddr
                 },
                 {
-                    "range": "Доставка!P" + str(deliveryHistoryCount+2) + ":P" + str(deliveryHistoryCount+ 2+len(cities)),
+                    "range": "Доставка!P" + str(deliveryHistoryCount+2) + ":P" + str(deliveryHistoryCount+ 2+len(stationWithAddr)),
                     "majorDimension": "ROWS",
-                    "values": cities 
+                    "values": stationWithAddr
                 },
                 {
                     "range": "Доставка!Q" + str(deliveryHistoryCount+2) + ":Q" + str(deliveryHistoryCount + 2 +len(path)),
