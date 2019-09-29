@@ -30,6 +30,9 @@ while True:
         majorDimension='ROWS'
     ).execute()
 
+    if 'values' not in values:
+        continue
+
     for elem in values['values']:
         if elem:
             if len(elem) < 10:
@@ -85,4 +88,4 @@ while True:
                                 "values": [[str(now)]] }    ]
                             }
                             ).execute()
-    time.sleep(6)
+    time.sleep(15)
