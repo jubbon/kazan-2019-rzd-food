@@ -148,11 +148,13 @@ while True:
     station_cood = list()
     station_names = list()
     station_address = list()
-  
+    OrderByCity = list ()
+
     if 'values' in basket:
         uuids = [[basket['values'][number][0]] for number in range(len(basket['values']))]
         tickets = [['76741487825338'] for number in range(len(basket['values']))]
         cities = [[basket['values'][number][1]] for number in range(len(basket['values']))]
+        OrderByCity = [[basket['values'][number][1]] for number in range(len(basket['values']))]
         comments = [[basket['values'][number][6]] for number in range(len(basket['values']))]
         totals = [[basket['values'][number][5]] for number in range(len(basket['values']))]
         status = [['Не отправлен'] for number in range(len(basket['values']))]
@@ -169,8 +171,8 @@ while True:
                         cafes_coord.append ([elem[7]])
                         cafes_addrs.append ([elem[9]])
 
-        for number in range(len(cities)):            
-            name = cities[number][0]
+        for number in range(len(OrderByCity)):            
+            name = OrderByCity[number][0]
             tickNum = tickets[number][0]
             for stat in range(len(stopStations)):
                 if stopStations['values'][stat][0] == tickNum:
@@ -198,9 +200,9 @@ while True:
                 {"range": "Заказы!B" + str(orderCount) + ":B" + str(orderCount+len(tickets)),
                 "majorDimension": "ROWS",
                 "values": tickets },
-                {"range": "Заказы!C" + str(orderCount) + ":C" + str(orderCount+len(cities)),
+                {"range": "Заказы!C" + str(orderCount) + ":C" + str(orderCount+len(station_names)),
                 "majorDimension": "ROWS",
-                "values": cities },
+                "values": station_names },
                 {"range": "Заказы!N" + str(orderCount) + ":N" + str(orderCount+len(comments)),
                 "majorDimension": "ROWS",
                 "values": comments },
@@ -233,7 +235,10 @@ while True:
                 "values": picture },
                 {"range": "Заказы!L" + str(orderCount) + ":L" + str(orderCount+len(bonus)),
                 "majorDimension": "ROWS",
-                "values": bonus }
+                "values": bonus },
+                {"range": "Заказы!R" + str(orderCount) + ":R" + str(orderCount+len(OrderByCity)),
+                "majorDimension": "ROWS",
+                "values": OrderByCity }
         ]
         }
     ).execute()
@@ -308,7 +313,7 @@ while True:
                     'phone': couriers[coutierIndex]['Phone'],
                     'message': 'Сформирован заказ ' + orderuuid[0] + ' Доставка ' + str(deliveryTime[uuids.index(orderuuid)][0]) + 
                     ' на станцию' 
-                    + cities[uuids.index(orderuuid)]
+                    + cities[uuids.index(orderuuid)][0]
                 })
                 time.sleep(5)
         cour = list()
