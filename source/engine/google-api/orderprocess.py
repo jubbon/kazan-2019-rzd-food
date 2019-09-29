@@ -169,7 +169,7 @@ while True:
                         bonus.append ([elem[5]])
                         cafes.append ([elem[3]])
                         cafes_coord.append ([elem[7]])
-                        cafes_addrs.append ([elem[9]])
+                        cafes_addrs.append ([elem[1] + ', '+ elem[9]])
 
         for number in range(len(OrderByCity)):            
             name = OrderByCity[number][0]
@@ -180,7 +180,7 @@ while True:
                         deliveryTime.append ([stopStations['values'][stat][2]])
                         station_cood.append ([stopStations['values'][stat][4]])
                         station_names.append ([stopStations['values'][stat][5]])
-                        station_address.append ([stopStations['values'][stat][6]])
+                        station_address.append ([stopStations['values'][stat][1] + ', ' + stopStations['values'][stat][6]])
                         break
 
         useIndex = orderCount 
@@ -334,7 +334,7 @@ while True:
         mintime = hereapi.getMinimumTime(A, B )
         if mintime == -1:
             mintime = 0
-        cour.append( mintime )
+        cour.append( round(mintime / 60) )
         delivToHist.append(cour)
 
     stationWithAddr = [[ station_names[number][0] + ' (' + station_address[number][0] + ')'] for number in range(len(station_address))]
@@ -353,17 +353,27 @@ while True:
                 {
                     "range": "Доставка!O" + str(deliveryHistoryCount+2) + ":O" + str(deliveryHistoryCount+ 2+len(cafesWithAddr)),
                     "majorDimension": "ROWS",
-                    "values": cafesWithAddr
+                    "values": cafes
                 },
                 {
                     "range": "Доставка!P" + str(deliveryHistoryCount+2) + ":P" + str(deliveryHistoryCount+ 2+len(stationWithAddr)),
                     "majorDimension": "ROWS",
-                    "values": stationWithAddr
+                    "values": station_names
                 },
                 {
                     "range": "Доставка!Q" + str(deliveryHistoryCount+2) + ":Q" + str(deliveryHistoryCount + 2 +len(path)),
                     "majorDimension": "ROWS",
                     "values": path
+                },
+                {
+                    "range": "Доставка!S" + str(deliveryHistoryCount+2) + ":S" + str(deliveryHistoryCount + 2 +len(cafes_addrs)),
+                    "majorDimension": "ROWS",
+                    "values": cafes_addrs
+                },
+                {
+                    "range": "Доставка!T" + str(deliveryHistoryCount+2) + ":T" + str(deliveryHistoryCount + 2 +len(station_address)),
+                    "majorDimension": "ROWS",
+                    "values": station_address
                 }
                   ]
             }
