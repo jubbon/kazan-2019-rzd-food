@@ -76,6 +76,8 @@ while True:
                     elem.append('')
                 if len(elem) < 7:
                     elem.append('')
+                if len(elem) < 8:
+                    elem.append('')
                 try:
                     elem[5] = str(int(elem[3]) * int(elem[4]))
                 except:
