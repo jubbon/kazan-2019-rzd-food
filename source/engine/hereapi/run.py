@@ -40,7 +40,7 @@ def getMinimumTime (A, B):
     url = f"https://transit.api.here.com/v3/route.json"
     deplocation = A # отправка
     arrlocation = B # прибытие
-    app_id = os.getenv('HERE_API_ID')
+    app_id = os.getenv('HERE_APP_ID')
     app_code = os.getenv('HERE_APP_CODE')
 
     maybeDriveWay = dict ()
